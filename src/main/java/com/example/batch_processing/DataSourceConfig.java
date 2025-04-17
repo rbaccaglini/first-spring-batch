@@ -26,6 +26,12 @@ public class DataSourceConfig {
         return DataSourceBuilder.create().build();
     }
 
+    @Bean
+    @ConfigurationProperties(prefix = "source.datasource")
+    public DataSource sourceDS() {
+        return DataSourceBuilder.create().build();
+    }
+
     @Qualifier("applicationJdbcTemplate")
     @Bean
     public JdbcTemplate applicationJdbcTemplate(@Qualifier("applicationDS") DataSource applicationDS) {
