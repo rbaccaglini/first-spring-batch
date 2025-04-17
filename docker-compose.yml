@@ -1,0 +1,14 @@
+version: '3'
+services:
+  mysqldb:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: my_user
+      MYSQL_PASSWORD: my_password
+      MYSQL_DATABASE: spring_batch
+    container_name: mysql-spring-batch-container
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./dbvolumes/mysql_data:/var/lib/mysql:rw
