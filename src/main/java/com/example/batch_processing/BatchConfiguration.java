@@ -8,27 +8,30 @@ import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
+import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
-import org.springframework.batch.item.file.FlatFileItemReader;
-import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
+import org.springframework.batch.item.database.builder.JdbcCursorItemReaderBuilder;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
 @Configuration
 public class BatchConfiguration {
 
     // tag::readerwriterprocessor[]
+
     @Bean
-    public FlatFileItemReader<Person> reader() {
-        return new FlatFileItemReaderBuilder<Person>()
+    public JdbcCursorItemReader<Person> reader(@Qualifier("sourceDS") DataSource dataSource) {
+        return new JdbcCursorItemReaderBuilder<Person>()
                 .name("personItemReader")
-                .resource(new ClassPathResource("sample-data.csv"))
-                .delimited()
-                .names("firstName", "lastName")
-                .targetType(Person.class)
+                .dataSource(dataSource)
+                .sql("SELECT name, last_name FROM people_source")
+                .rowMapper((rs, rowNum) -> {
+                    String firstName = rs.getString("name");
+                    String lastName = rs.getString("last_name");
+                    return new Person(firstName, lastName);
+                })
                 .build();
     }
 
@@ -58,7 +61,7 @@ public class BatchConfiguration {
 
     @Bean
     public Step step1(JobRepository jobRepository, DataSourceTransactionManager transactionManager,
-                      FlatFileItemReader<Person> reader, PersonItemProcessor processor, JdbcBatchItemWriter<Person> writer) {
+                      JdbcCursorItemReader<Person> reader, PersonItemProcessor processor, JdbcBatchItemWriter<Person> writer) {
         return new StepBuilder("step1", jobRepository)
                 .<Person, Person>chunk(3, transactionManager)
                 .reader(reader)
